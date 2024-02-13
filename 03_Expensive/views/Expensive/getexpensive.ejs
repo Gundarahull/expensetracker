@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>
+        <%= pagetitle %>
+    </title>
+    <!-- Bootstrap CSS -->
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="styles.css">
+</head>
+
+<body>
+    <header class="bg-primary py-3">
+        <div class="container text-center">
+            <h1 class="text-light">EXPENSE TRACKER</h1>
+        </div>
+    </header>
+    <nav>
+        <a href="/basis" id="downloadExpenses" class="btn btn-success btn-sm float-right mt-3">Download Expenses</a>
+    </nav>
+    <div class="container my-4">
+        <div class="row">
+            <div class="col-md-6 mx-auto">
+                <form action="/addexpense" method="post">
+                    <div class="form-group">
+                        <label for="amount">Amount</label>
+                        <input type="number" class="form-control" name="amount" id="amount">
+                    </div>
+                    <div class="form-group">
+                        <label for="description">Description</label>
+                        <input type="text" class="form-control" name="description" id="description">
+                    </div>
+                    <div class="form-group">
+                        <label for="category">Category</label>
+                        <select class="form-control" name="category" id="category">
+                            <option value="food">Food</option>
+                            <option value="petrol">Petrol</option>
+                            <option value="bills">Bills</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="limit">Expenses per Page</label>
+                        <select class="form-control" name="limit" id="limit" onchange="changeLimit(this)">
+                            <option value="3" <% if (pagination.pageLimit === 3) { %> selected <% } %>>3</option>
+                            <option value="5" <% if (pagination.pageLimit === 5) { %> selected <% } %>>5</option>
+                            <option value="10" <% if (pagination.pageLimit === 10) { %> selected <% } %>>10</option>
+                        </select>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Submit</button>
+                </form>
+            </div>
+        </div>
+        
+
+        <% if(expenses && expenses.length> 0) { %>
+            <div class="row mt-4">
+                <% expenses.forEach(function(exp) { %>
+                    <div class="col-md-6 mx-auto">
+                        <div class="card mb-3">
+                            <div class="card-body">
+                                <h5 class="card-title">Amount: <%= exp.amount %>
+                                </h5>
+                                <p class="card-text">Description: <%= exp.description %>
+                                </p>
+                                <p class="card-text">Category: <%= exp.category %>
+                                </p>
+                                <a href="/expense/edit/<%= exp.id %>" class="btn btn-sm btn-primary">Edit</a>
+                                <form action="/expense/delete" method="post" style="display: inline;">
+                                    <input type="hidden" name="expenseid" value="<%= exp.id %>">
+                                    <button type="submit" class="btn btn-sm btn-danger">Delete</button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                    <% }); %>
+            </div>
+
+            <!-- Pagination -->
+            <nav aria-label="Page navigation">
+                <ul class="pagination justify-content-center">
+                    <% if (pagination.prevPage) { %>
+                        <li class="page-item">
+                            <a class="page-link" href="<%= pagination.prevPage %>" aria-label="Previous">
+                                <span aria-hidden="true">&laquo;</span>
+                                <span class="sr-only">Previous</span>
+                            </a>
+                        </li>
+                        <% } %>
+
+                            <% for (let i=1; i <=pagination.pageCount; i++) { %>
+                                <li class="page-item <% if (i === pagination.currentPage) { %> active <% } %>">
+                                    <a class="page-link"
+                                        href="<%= pagination.baseUrl %>?limit=<%= pagination.pageLimit %>&page=<%= i %>">
+                                        <%= i %>
+                                    </a>
+                                </li>
+                                <% } %>
+
+                                    <% if (pagination.nextPage) { %>
+                                        <li class="page-item">
+                                            <a class="page-link" href="<%= pagination.nextPage %>" aria-label="Next">
+                                                <span aria-hidden="true">&raquo;</span>
+                                                <span class="sr-only">Next</span>
+                                            </a>
+                                        </li>
+                                        <% } %>
+                            
+                </ul>
+            </nav>
+
+            </nav>
+            <% } else { %>
+                <div class="row mt-4">
+                    <div class="col-md-6 mx-auto">
+                        <p>No expenses found.</p>
+                    </div>
+                </div>
+                <% } %>
+    </div>
+
+    <!-- Bootstrap JS and dependencies (optional) -->
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.4/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/0.21.1/axios.min.js"></script>
+
+    <script>
+        document.getElementById('downloadExpenses').addEventListener('click', async function () {
+            try {
+                const response = await axios.get('/basis');
+                const data = response.data;
+                const blob = new Blob([data], { type: 'text/plain;charset=utf-8;' });
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'expenses_data.txt';
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+            } catch (error) {
+                console.error('Error downloading expenses:', error);
+            }
+        });
+    </script>
+
+
+<script>
+    function changeLimit(select) {
+        const limit = select.value;
+        const url = `<%= pagination.baseUrl %>?limit=${limit}&page=1`;
+        window.location.href = url;
+    }
+</script>
+
+
+</body>
+
+</html>
